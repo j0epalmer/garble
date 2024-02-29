@@ -169,3 +169,46 @@ def remove_subnote(id: int) -> None:
     subnote = {"id": id}
     
     subnotes.delete_one(subnote)
+
+def get_key(token: str) -> str:
+    data = {"token": token}
+    query = users.find(data)
+    query_result = list(query)
+
+    return query_result[0]["password_hash"][:56]   
+
+
+def get_iv_from_token(token: str) -> str:
+    data = {"token": token}
+    query = users.find(data)
+    query_result = list(query)
+
+    return query_result[0]["iv"]  
+
+
+def get_all_subnotes(author: str) -> list:
+    found_subnotes = []
+    all_subnotes = list(subnotes.find({}, {'_id': False}))    
+
+    for subnote in all_subnotes:
+        parent_note_id = subnote["note_id"]
+        parent_note_authors = get_note_authors(parent_note_id)
+
+        if author in parent_note_authors:
+            found_subnotes.append(subnote)
+
+    return found_subnotes
+
+
+def get_parent_note_id_from_subnote_id(subnote_id):
+    data = {"id": subnote_id}
+    query_result = list(subnotes.find(data))
+
+    return query_result[0]["note_id"]
+
+
+def retrieve_subnote(subnote_id):
+    data = {"id": subnote_id}
+    query_result = list(subnotes.find(data, {'_id': False}))
+
+    return query_result[0]
