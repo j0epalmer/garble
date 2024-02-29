@@ -21,7 +21,12 @@ from garble_functions import (
     insert_subnote,
     update_subnote,
     subnote_exists,
-    remove_subnote
+    remove_subnote,
+    get_key,
+    get_iv_from_token,
+    get_all_subnotes,
+    get_parent_note_id_from_subnote_id,
+    retrieve_subnote
 )
 import time
 
@@ -191,6 +196,12 @@ def post_subnote():
     if not note_exists(note_id):
         return "Invalid note ID."
 
+    parent_note_authors = get_note_authors(note_id)
+    author = get_author_from_token(token)
+
+    if author not in parent_note_authors:
+        return "You are not allowed to a subnotes to this note."
+
     subnote_id = get_subnote_id()
     content = data["content"]
     modified = int(time.time())
@@ -264,6 +275,74 @@ def delete_subnote():
     remove_subnote(subnote_id)
 
     return "Subnote deleted."
+
+
+@app.route("/subnotes")
+def get_subnotes():
+    data = request.get_json()
+    token = data["token"]
+    author = get_author_from_token(token)
+
+    return get_all_subnotes(author)
+
+@app.route("/subnote")
+def get_subnote():
+    data = request.get_json()
+    token = data["token"]
+    author = get_author_from_token(token)
+    subnote_id = data["subnote_id"]
+
+    if not subnote_exists(subnote_id):
+        return "Invalid subnote ID."
+    
+    parent_node_id = get_parent_note_id_from_subnote_id(subnote_id)
+    authors = get_note_authors(parent_node_id)
+
+    if author not in authors:
+        return "You are not allowed to view this subnote."
+    
+    subnote = retrieve_subnote(subnote_id)
+
+    return subnote
+
+@app.route("/key")
+def get_encryption_key():
+    data = request.get_json()
+
+    token = data["token"]
+
+    if not token_exists(token):
+        return "Invalid token."
+
+    key = get_key(token)
+
+    return key
+
+
+@app.route("/iv")
+def get_encryption_iv():
+    data = request.get_json()
+
+    token = data["token"]
+
+    if not token_exists(token):
+        return "Invalid token."
+
+    iv = get_iv_from_token(token)
+
+    return iv
+
+
+@app.route("/validate-token", methods=["POST"])
+def post_validate_token():
+    data = request.get_json()
+
+    token = data["token"]
+
+    if not token_exists(token):
+        return "0"
+
+    return "1"
 
 
 if __name__ == "__main__":
