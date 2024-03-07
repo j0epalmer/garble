@@ -38,7 +38,10 @@ ph = PasswordHasher()
 def post_register():
     data = request.get_json()
 
-    username = data["username"]
+    username = data["username"].strip().lower()
+
+    if not username:
+        return "Please enter a username and password."
     
     if username_exists(username):
         return "Username taken."
