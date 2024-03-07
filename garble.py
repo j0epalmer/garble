@@ -46,11 +46,13 @@ def post_register():
     if username_exists(username):
         return "Username taken."
     
-    password = data["password"]
+    password = data["password"].strip().lower()
+
+    if not password:
+        return "Please enter a username and password."
 
     iv = generate_iv()
     password_hash = ph.hash(password + iv)
-
 
     user = {
         "username": username,
